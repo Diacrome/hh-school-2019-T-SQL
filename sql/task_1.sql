@@ -1,12 +1,3 @@
-CREATE TABLE vacancy (
-    vacancy_id serial PRIMARY KEY,
-    creation_time timestamp NOT NULL,
-    expire_time timestamp NOT NULL,
-    employer_id integer DEFAULT 0 NOT NULL,    
-    disabled boolean DEFAULT false NOT NULL,
-    visible boolean DEFAULT true NOT NULL,
-    area_id integer
-);
 
 CREATE TABLE vacancy_body (
     vacancy_body_id serial PRIMARY KEY,
@@ -22,29 +13,32 @@ CREATE TABLE vacancy_body (
     work_schedule_type integer DEFAULT 0 NOT NULL,
     employment_type integer DEFAULT 0 NOT NULL,
     compensation_gross boolean,
-    driver_license_types varchar(5)[],
-    CONSTRAINT fk_vacancy_body_id FOREIGN KEY (vacancy_body_id)  REFERENCES vacancy  (vacancy_id),
+    driver_license_types varchar(5)[],    
     CONSTRAINT vacancy_body_work_employment_type_validate CHECK ((employment_type = ANY (ARRAY[0, 1, 2, 3, 4]))),
     CONSTRAINT vacancy_body_work_schedule_type_validate CHECK ((work_schedule_type = ANY (ARRAY[0, 1, 2, 3, 4])))
 );
-CREATE TABLE vacancy_body_specialization (
-    vacancy_body_specialization_id integer NOT NULL,
-    CONSTRAINT fk_vacancy_body_specialization_id FOREIGN KEY (vacancy_body_specialization_id)  REFERENCES vacancy (vacancy_id),
-    specialization_id integer DEFAULT 0 NOT NULL
-);
 
-CREATE TABLE resume_data (
-    resume_id serial PRIMARY KEY,
+CREATE TABLE vacancy (
+    vacancy_id serial PRIMARY KEY,
     creation_time timestamp NOT NULL,
     expire_time timestamp NOT NULL,
-    user_id integer DEFAULT 0 NOT NULL,    
+    employer_id integer DEFAULT 0 NOT NULL,    
     disabled boolean DEFAULT false NOT NULL,
     visible boolean DEFAULT true NOT NULL,
+    vacancy_body_id integer DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_vacancy_body_id FOREIGN KEY (vacancy_body_id)  REFERENCES vacancy_body  (vacancy_body_id),
     area_id integer
 );
+
+CREATE TABLE vacancy_body_specialization (
+    vacancy_body_id integer DEFAULT 0 NOT NULL,
+    specialization_id integer DEFAULT 0 NOT NULL,
+    FOREIGN KEY(vacancy_body_id) REFERENCES vacancy_body(vacancy_body_id),
+    FOREIGN KEY(specialization_id) REFERENCES specialization(specialization_id)
+);
+
 CREATE TABLE resume_data_body (
     resume_body_id serial PRIMARY KEY,
-    CONSTRAINT fk_resume_body_id FOREIGN KEY (resume_body_id)  REFERENCES resume_data (resume_id),
     fio varchar(150) DEFAULT ''::varchar NOT NULL,
     gender boolean DEFAULT false NOT NULL,
     birth_date timestamp NOT NULL,
@@ -54,10 +48,24 @@ CREATE TABLE resume_data_body (
     text text
 );
 
+CREATE TABLE resume_data (
+    resume_id serial PRIMARY KEY,
+    title varchar(150) DEFAULT ''::varchar NOT NULL,
+    creation_time timestamp NOT NULL,
+    expire_time timestamp NOT NULL,
+    user_id integer DEFAULT 0 NOT NULL,    
+    disabled boolean DEFAULT false NOT NULL,
+    visible boolean DEFAULT true NOT NULL,
+    resume_data_body_id integer DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_resume_data_body_id FOREIGN KEY (resume_data_body_id)  REFERENCES resume_data_body (resume_body_id),
+    area_id integer
+);
+
+
 CREATE TABLE vacancy_response(
     id serial PRIMARY KEY,
-    resume_id integer  ,
-    vacancy_id integer  ,
+    resume_id integer DEFAULT 0 NOT NULL,
+    vacancy_id integer DEFAULT 0 NOT NULL,
     response_date timestamp NOT NULL,
     CONSTRAINT fk_vacancy_response_resume_id FOREIGN KEY (resume_id)  REFERENCES resume_data (resume_id),
     CONSTRAINT fk_vacancy_response_vacancy_id FOREIGN KEY (vacancy_id)  REFERENCES vacancy (vacancy_id)
@@ -69,11 +77,16 @@ CREATE TABLE specialization (
   text text
 );
 CREATE TABLE resume_data_specialization (        
-    resume_data_specialization_id integer DEFAULT 0 NOT NULL,
-    CONSTRAINT fk_resume_body_specialization_id FOREIGN KEY (resume_data_specialization_id)  REFERENCES resume_data (resume_id),   
-    specialization_id integer DEFAULT 0 NOT NULL
+    resume_body_id integer DEFAULT 0 NOT NULL,
+    specialization_id integer DEFAULT 0 NOT null,
+    FOREIGN KEY(resume_body_id) REFERENCES resume_data_body(resume_body_id),
+    FOREIGN KEY(specialization_id) REFERENCES specialization(specialization_id)    
 );
---constant tax (1-0.13=0.87)
-CREATE OR REPLACE FUNCTION f_tax()
-  RETURNS Float AS
-$$SELECT Float '0.87'$$ LANGUAGE sql IMMUTABLE;
+
+CREATE OR replace FUNCTION f_tax(gross boolean) RETURNS Float AS $$
+BEGIN
+RETURN CASE WHEN gross then '1'
+				    else '0.87'
+	   end;		    
+END; $$
+LANGUAGE PLPGSQL immutable;

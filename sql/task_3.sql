@@ -1,12 +1,12 @@
 SELECT area_id, 
-       AVG(CASE WHEN compensation_gross THEN compensation_from
-                                        ELSE f_tax()*compensation_from END
-          )AS "РЎСЂРµРґРЅСЏСЏ РјРёРЅРёРјР°Р»СЊР°СЏ Р·Р°СЂРїР»Р°С‚Р°",
-       AVG(CASE WHEN compensation_gross THEN compensation_to
-                                        ELSE f_tax()*compensation_to END
-          )AS  "РЎСЂРµРґРЅСЏСЏ РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ Р·Р°СЂРїР»Р°С‚Р°", 
-       AVG(CASE WHEN compensation_gross THEN (compensation_to+compensation_from)/2
-                                        ELSE f_tax()*(compensation_to+compensation_from)/2 END
-          )AS  "РЎСЂРµРґРЅСЏСЏ Р·Р°СЂРїР»Р°С‚Р°" 
-   FROM vacancy_body WHERE compensation_from IS NOT null
-   GROUP BY area_id
+       AVG(CASE WHEN compensation_from notnull then f_tax(compensation_gross)*compensation_from 
+       									   else 0 
+       end) AS "Средняя минимальная зарплата",
+       AVG(CASE WHEN compensation_to notnull then f_tax(compensation_gross)*compensation_to 
+       									   else 0 
+       end) AS "Средняя максимальная зарплата",
+	   AVG(CASE WHEN compensation_to notnull and compensation_from notnull then	f_tax(compensation_gross)*(compensation_to+compensation_from)/2
+	   																	   else 0
+	   end) as "Средняя зарплата"																	              
+FROM vacancy_body 
+GROUP BY area_id
