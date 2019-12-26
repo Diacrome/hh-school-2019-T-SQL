@@ -3,7 +3,7 @@ SELECT
 FROM
 	vacancy v
 INNER JOIN vacancy_body vb ON
-	vb.vacancy_body_id = v.vacancy_id
+	vb.vacancy_body_id = v.vacancy_body_id
 LEFT JOIN vacancy_response r ON
 	v.vacancy_id = r.vacancy_id
 	AND r.response_date <= v.creation_time + INTERVAL '7' DAY

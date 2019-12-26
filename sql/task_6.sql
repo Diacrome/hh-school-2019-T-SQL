@@ -1,11 +1,10 @@
-SELECT rds.resume_data_specialization_id AS "ID Резюме",
-       array_agg(rds.specialization_id) AS "Массив специализаций",
-       mode() WITHIN GROUP (order by vbs.specialization_id desc) AS "Самая частая профессия вакансий"
-FROM resume_data_specialization rds JOIN 
-  (
-      vacancy_response vc JOIN vacancy_body_specialization vbs
-      ON vbs.vacancy_body_specialization_id=vc.vacancy_id
-
-  )           
-ON  resume_id=resume_data_specialization_id
-GROUP BY rds.resume_data_specialization_id
+select  rd.resume_id , array_agg(distinct s.name||'|')  ,
+MODE() WITHIN GROUP (ORDER BY s2.name) as most_popular_specialization
+ from resume_data_specialization  rs 
+ INNER JOIN specialization s ON rs.specialization_id = s.specialization_id
+ inner join resume_data rd on rd.resume_data_body_id = rs.resume_body_id
+ inner join vacancy_response vr on vr.resume_id = rd.resume_id
+ inner join vacancy vac on vac.vacancy_id = vr.vacancy_id
+ inner join vacancy_body_specialization vbs on  vbs.vacancy_body_id = vac.vacancy_body_id
+ INNER JOIN specialization s2 ON s2.specialization_id = vbs.specialization_id		
+GROUP BY rd.resume_id 
